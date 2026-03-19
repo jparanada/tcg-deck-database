@@ -5,10 +5,6 @@ interface Deck {
   id: string;
   name: string;
   creator: string | null;
-  pokemon_count: number;
-  trainer_count: number;
-  energy_count: number;
-  total_count: number;
 }
 
 export const dynamic = "force-dynamic";
@@ -16,9 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const { data: decks, error } = await supabase
     .from("decks")
-    .select(
-      "id, name, creator, pokemon_count, trainer_count, energy_count, total_count"
-    )
+    .select("id, name, creator")
     .eq("published", true)
     .order("name", { ascending: true });
 
@@ -59,14 +53,8 @@ export default async function HomePage() {
             >
               <h2 className="font-semibold text-lg mb-1">{deck.name}</h2>
               {deck.creator && (
-                <p className="text-sm text-gray-400 mb-2">{deck.creator}</p>
+                <p className="text-sm text-gray-400">{deck.creator}</p>
               )}
-              <div className="flex gap-3 text-sm text-gray-500">
-                <span>P: {deck.pokemon_count}</span>
-                <span>T: {deck.trainer_count}</span>
-                <span>E: {deck.energy_count}</span>
-                <span className="ml-auto">{deck.total_count}/60</span>
-              </div>
             </Link>
           ))}
         </div>
