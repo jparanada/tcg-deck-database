@@ -1,7 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import type { CardCategory } from "@/lib/parser";
+import TextDecklist from "./text-decklist";
 
 interface DeckCard {
   id: string;
@@ -16,18 +18,6 @@ interface DeckCard {
   sort_order: number;
 }
 
-const CATEGORY_LABELS: Record<CardCategory, string> = {
-  pokemon: "Pokemon",
-  trainer: "Trainer",
-  energy: "Energy",
-};
-
-const CATEGORY_COLORS: Record<CardCategory, string> = {
-  pokemon: "text-red-500",
-  trainer: "text-blue-500",
-  energy: "text-green-500",
-};
-
 export const dynamic = "force-dynamic";
 
 export default async function DeckPage({
@@ -39,11 +29,13 @@ export default async function DeckPage({
 
   const { data: deck } = await supabase
     .from("decks")
-    .select("*")
+    .select("*, formats(id, name)")
     .eq("id", id)
     .single();
 
   if (!deck) notFound();
+
+  const format = deck.formats as { id: string; name: string } | null;
 
   const { data: cards } = await supabase
     .from("deck_cards")
@@ -52,14 +44,14 @@ export default async function DeckPage({
     .order("sort_order", { ascending: true });
 
   const deckCards = (cards ?? []) as DeckCard[];
-  const grouped = {
-    pokemon: deckCards.filter((c) => c.category === "pokemon"),
-    trainer: deckCards.filter((c) => c.category === "trainer"),
-    energy: deckCards.filter((c) => c.category === "energy"),
-  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
+      {format && (
+        <Link href={`/format/${format.id}`} className="text-sm text-blue-500 hover:underline mb-4 inline-block">
+          &larr; {format.name}
+        </Link>
+      )}
       <h1 className="text-3xl font-bold mb-2">{deck.name}</h1>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400 mb-2">
         {deck.creator && <span>by {deck.creator}</span>}
@@ -81,40 +73,24 @@ export default async function DeckPage({
       )}
       <div className="mb-8" />
 
-      {(["pokemon", "trainer", "energy"] as CardCategory[]).map((cat) => {
-        const catCards = grouped[cat];
-        if (catCards.length === 0) return null;
-        const catCount = catCards.reduce((sum, c) => sum + c.count, 0);
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-10">
+        {deckCards.map((card) => (
+          <div key={card.id} className="relative">
+            <Image
+              src={card.image_url_hires}
+              alt={card.card_name}
+              width={245}
+              height={342}
+              className="rounded-lg w-full h-auto"
+            />
+            <span className="absolute bottom-[12%] left-1/2 -translate-x-1/2 bg-red-800 text-white text-xl font-bold w-[28%] aspect-square flex items-center justify-center rounded-lg shadow-lg">
+              {card.count}
+            </span>
+          </div>
+        ))}
+      </div>
 
-        return (
-          <section key={cat} className="mb-10">
-            <h2
-              className={`text-xl font-semibold mb-4 ${CATEGORY_COLORS[cat]}`}
-            >
-              {CATEGORY_LABELS[cat]} ({catCount})
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {catCards.map((card) => (
-                <div key={card.id} className="relative">
-                  <Image
-                    src={card.image_url_hires}
-                    alt={card.card_name}
-                    width={245}
-                    height={342}
-                    className="rounded-lg w-full h-auto"
-                  />
-                  <span className="absolute top-1 left-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                    x{card.count}
-                  </span>
-                  <p className="text-xs mt-1 text-center truncate">
-                    {card.card_name}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      <TextDecklist cards={deckCards} />
     </div>
   );
 }
