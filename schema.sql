@@ -1,5 +1,13 @@
 -- Run this in the Supabase SQL Editor to set up the database
 
+create table users (
+  id uuid primary key default gen_random_uuid(),
+  username text unique not null,
+  password_hash text not null,
+  role text not null default 'owner',
+  created_at timestamptz not null default now()
+);
+
 create table formats (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -46,6 +54,7 @@ create index deck_cards_deck_id_idx on deck_cards(deck_id);
 
 -- Grant access to anon role
 grant usage on schema public to anon;
+grant all on users to anon;
 grant all on formats to anon;
 grant all on decks to anon;
 grant all on deck_cards to anon;

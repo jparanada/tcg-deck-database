@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createFormat } from "@/app/actions/formats";
 import { useRouter } from "next/navigation";
 
 export default function NewFormatPage() {
@@ -16,29 +16,18 @@ export default function NewFormatPage() {
     setSaving(true);
     setError("");
 
-    const slug = name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+    const result = await createFormat({
+      name: name.trim(),
+      description: description.trim() || null,
+    });
 
-    const { data: format, error: insertError } = await supabase
-      .from("formats")
-      .insert({
-        name: name.trim(),
-        slug,
-        description: description.trim() || null,
-      })
-      .select("id")
-      .single();
-
-    if (insertError || !format) {
-      setError(insertError?.message ?? "Failed to save format");
+    if ("error" in result) {
+      setError(result.error);
       setSaving(false);
       return;
     }
 
-    router.push(`/format/${format.id}`);
+    router.push(`/format/${result.id}`);
   }
 
   return (

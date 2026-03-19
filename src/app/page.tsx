@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getSession } from "@/lib/session";
 import Link from "next/link";
 
 interface Format {
@@ -10,6 +11,9 @@ interface Format {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const session = await getSession();
+  const isOwner = session?.role === "owner";
+
   const { data: formats, error } = await supabase
     .from("formats")
     .select("id, name, description")
@@ -32,12 +36,14 @@ export default async function HomePage() {
       {formats.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-500 mb-4">No formats yet.</p>
-          <Link
-            href="/new"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Create your first format
-          </Link>
+          {isOwner && (
+            <Link
+              href="/new"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Create your first format
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -55,12 +61,14 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
-          <Link
-            href="/new"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            New Format
-          </Link>
+          {isOwner && (
+            <Link
+              href="/new"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              New Format
+            </Link>
+          )}
         </>
       )}
     </div>

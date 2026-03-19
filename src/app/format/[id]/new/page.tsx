@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { parseDeckList } from "@/lib/parser";
 import type { ParseResult } from "@/lib/parser";
-import { supabase } from "@/lib/supabase";
+import { createDeck } from "@/app/actions/decks";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 
@@ -29,61 +29,37 @@ export default function NewDeckPage() {
     setSaving(true);
     setError("");
 
-    const slug = name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+    const result = await createDeck({
+      formatId,
+      name: name.trim(),
+      creator: creator.trim() || null,
+      source: source.trim() || null,
+      notes: notes.trim() || null,
+      rawList,
+      pokemonCount: preview.pokemonCount,
+      trainerCount: preview.trainerCount,
+      energyCount: preview.energyCount,
+      totalCount: preview.totalCount,
+      cards: preview.cards.map((card) => ({
+        card_name: card.name,
+        set_abbrev: card.setAbbrev,
+        collector_number: card.collectorNumber,
+        api_card_id: card.apiCardId,
+        image_url: card.imageUrl,
+        image_url_hires: card.imageUrlHires,
+        category: card.category,
+        count: card.count,
+        sort_order: card.sortOrder,
+      })),
+    });
 
-    const { data: deck, error: deckError } = await supabase
-      .from("decks")
-      .insert({
-        format_id: formatId,
-        name: name.trim(),
-        slug,
-        creator: creator.trim() || null,
-        source: source.trim() || null,
-        notes: notes.trim() || null,
-        raw_list: rawList,
-        published: true,
-        pokemon_count: preview.pokemonCount,
-        trainer_count: preview.trainerCount,
-        energy_count: preview.energyCount,
-        total_count: preview.totalCount,
-      })
-      .select("id")
-      .single();
-
-    if (deckError || !deck) {
-      setError(deckError?.message ?? "Failed to save deck");
+    if ("error" in result) {
+      setError(result.error);
       setSaving(false);
       return;
     }
 
-    const cardRows = preview.cards.map((card) => ({
-      deck_id: deck.id,
-      card_name: card.name,
-      set_abbrev: card.setAbbrev,
-      collector_number: card.collectorNumber,
-      api_card_id: card.apiCardId,
-      image_url: card.imageUrl,
-      image_url_hires: card.imageUrlHires,
-      category: card.category,
-      count: card.count,
-      sort_order: card.sortOrder,
-    }));
-
-    const { error: cardsError } = await supabase
-      .from("deck_cards")
-      .insert(cardRows);
-
-    if (cardsError) {
-      setError(cardsError.message);
-      setSaving(false);
-      return;
-    }
-
-    router.push(`/deck/${deck.id}`);
+    router.push(`/deck/${result.id}`);
   }
 
   return (

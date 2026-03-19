@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getSession } from "@/lib/session";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -16,6 +17,8 @@ export default async function FormatPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await getSession();
+  const isOwner = session?.role === "owner";
 
   const { data: format } = await supabase
     .from("formats")
@@ -45,12 +48,14 @@ export default async function FormatPage({
       {!decks || decks.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-500 mb-4">No decks in this format yet.</p>
-          <Link
-            href={`/format/${id}/new`}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Create your first deck
-          </Link>
+          {isOwner && (
+            <Link
+              href={`/format/${id}/new`}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Create your first deck
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -68,12 +73,14 @@ export default async function FormatPage({
               </Link>
             ))}
           </div>
-          <Link
-            href={`/format/${id}/new`}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            New Deck
-          </Link>
+          {isOwner && (
+            <Link
+              href={`/format/${id}/new`}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              New Deck
+            </Link>
+          )}
         </>
       )}
     </div>
