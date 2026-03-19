@@ -1,5 +1,5 @@
 {
-  "name": "tcg-database",
+  "name": "tcg-deck-database",
   "version": "0.1.0",
   "private": true,
   "scripts": {
